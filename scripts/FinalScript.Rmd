@@ -1,0 +1,432 @@
+---
+title: "Quantium Virtual Internship - Retail Strategy and Analytics - Task 1"
+author: "David Singh"
+output:
+  pdf_document: default
+  html_document: default
+---
+
+```{r setup, include=FALSE, message=FALSE, warning=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# Solution for Task 1
+
+This document provides a comprehensive solution for Task 1 of the Quantium Virtual Internship. The analysis involves loading and cleaning retail transaction and customer data, performing exploratory data analysis, and deriving insights into customer segments based on purchasing behavior.
+
+# Step 1: Loading Required Libraries and Datasets
+
+We begin by loading the necessary R libraries and datasets. Ensuring these packages are installed prior to running the script.
+
+```{r Load Libraries, results='hide', message=FALSE, warning=FALSE}
+# Load required libraries
+library(data.table)
+library(ggplot2)
+library(ggmosaic)
+library(readr)
+library(readxl)
+library(janitor)
+library(dplyr)
+library(lubridate)
+```
+
+Setting the file path to our current working directory and loading the transaction and customer datasets. Adjusting the path as needed for our system (Windows 10 pro here).
+
+```{r Load Datasets}
+filePath <- "C:/Users/david/Desktop/QT1/"
+
+# Load Datasets
+transactionData <- read_excel(paste0(filePath, "QVI_transaction_data.xlsx"))
+customerData <- fread(paste0(filePath, "QVI_purchase_behaviour.csv"))
+```
+
+# Step 2:  Exploratory Data Analysis - Transaction Data
+
+## Examine the Transaction Data
+
+Let's inspect the structure and initial rows of the transaction data to understand its format and content.
+
+```{r Examine Transaction Data}
+str(transactionData)
+head(transactionData)
+```
+
+The `DATE` column is in an integer format, which we need to convert to a proper date format for analysis.
+
+## Convert "DATE" to Date Format
+
+Excel integer dates start from December 30, 1899. We use this origin to convert the `date` column.
+
+```{r Convert date}
+transactionData$DATE <- as.Date(transactionData$DATE, origin = "1899-12-30")
+head(transactionData)
+```
+
+## Cleaning & Standardizing names of transactionData & customerData attributes 
+```{r Cleaning & Standardizing}
+library(janitor)
+transactionData <- clean_names(transactionData)
+customerData <- clean_names(customerData)
+names(transactionData)
+names(customerData)
+```
+
+## Summary of prod_name
+
+Next, we summarize the `prod_name` column to explore the range of products.
+
+```{r Summary of prod_name}
+# Top 10 most frequent product names
+head(sort(table(transactionData$prod_name), decreasing = TRUE), 10)
+
+# We can use "table(transactionData$prod_name)" to show all values.
+```
+This shows various potato chip products, but we need to ensure no non-chip items (e.g., salsa) are included.
+
+## Further Examining prod_name
+As we are only interested in words that will tell us if the product is chips or 
+not, let's remove all words with digits and special characters such as '&' from our
+set of product words. We can do this using `grepl()`
+
+To confirm we’re analyzing only chips, we break down `prod_name` into individual words and analyze their frequency, excluding numbers and punctuation.
+
+```{r Examining prod_name}
+# Step 1: Convert prod_name to character
+prod_names <- as.character(unique(transactionData$prod_name))
+
+# Step 2: Split into individual words
+productWords <- data.table(words = unlist(strsplit(prod_names, " ")))
+
+# Step 3: Remove numbers and punctuation
+productWords <- productWords[!grepl("[0-9]|[[:punct:]]", words)]
+
+# Step 4: Count word frequency
+word_freq <- productWords[, .N, by = words][order(-N)]
+
+# Step 5: View results
+print(word_freq)
+```
+
+
+Words like "Salsa" appear, indicating non-chip products that need removal.
+
+## Remove Salsa Products
+
+We filter out salsa products by identifying them in `prod_name` and excluding them.
+
+```{r Filtering out salsa products}
+library(dplyr)
+transactionData <- transactionData %>%
+  filter(!grepl("salsa", tolower(prod_name)))
+```
+
+
+
+## Initial Summary
+
+We check for nulls and outliers using a summary of the cleaned dataset.
+
+```{r Initial Summary}
+summary(transactionData)
+```
+
+No nulls are present, but `prod_qty` shows a maximum of 200, suggesting a potential outlier.
+
+## Filter Outliers
+
+Investigating transactions with `prod_qty` of 200 reveals they belong to one customer (loyalty card 226000), likely a commercial buyer rather than a typical retail customer.
+
+```{r Filter Outliers}
+library(dplyr) 
+outlier_transactions <- filter(transactionData, prod_qty == 200)
+print(outlier_transactions)
+```
+
+```{r Checking this customer’s purchase history}
+customer_transactions <- filter(transactionData,lylty_card_nbr == 226000)
+print(customer_transactions)
+```
+Only these two transactions exist, suggesting a commercial buyer. 
+
+```{r Removing them}
+transactionData <- filter(transactionData,lylty_card_nbr != 226000)
+summary(transactionData)
+```
+
+After removal, the maximum `prod_qty` is now 5,and tot_sales max is 29.5 which is more reasonable.
+
+# Step 3: Transaction Trends Over Time
+
+We analyze transactions by date to check for missing data or patterns.
+```{r Converting tibble to a data.table}
+# Converting tibble to a data.table
+library(data.table)
+setDT(transactionData)
+```
+
+```{r Summarize transactions per day}
+# Count transactions by date
+transactions_by_day <- transactionData[, .(count = .N), by = date]
+
+# Checking result
+str(transactions_by_day)
+
+# Checking unique dates
+nrow(transactions_by_day) # Should show 364, not 365
+```
+
+```{r Creating a complete sequence of all dates in the range}
+# Creating a complete sequence of all dates in the range
+all_dates <- data.table(date = seq(min(transactionData$date), max(transactionData$date), by = "1 day"))
+```
+
+```{r Merging to ensure every date is represented, even if there were no transactions that day}
+# Merging to ensure every date is represented, even if there were no transactions that day
+transactions_by_day <- merge(all_dates, transactions_by_day, by = "date", all.x = TRUE)
+```
+
+```{r Replace NA counts with 0 for days with no transactions}
+# Replacing NA counts with 0 for days with no transactions
+transactions_by_day[is.na(count), count := 0]
+```
+```{r Plot transactions over time}
+# Plotting transactions over time
+library(ggplot2)
+ggplot(transactions_by_day, aes(x = date, y = count)) +
+  geom_line(color = "steelblue") +
+  labs(
+    x = "Day",
+    y = "Number of Transactions",
+    title = "Transactions Over Time"
+  ) +
+  scale_x_date(date_breaks = "1 month", date_labels = "%b %Y") +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 90, vjust = 0.5))
+```
+
+The plot shows 364 days of data (missing date on December 25, 2018 (Christmas Day), when stores were likely closed.
+
+## Zoom into December
+
+We zoom into December to examine holiday season trends.
+
+```{r Zoom into December}
+library(lubridate)
+library(ggplot2)
+# Filter for December data :
+december_data <- transactions_by_day[month(date) == 12, ]
+# Plot :
+ggplot(december_data, aes(x = date, y = count)) +
+  geom_line(color = "darkgreen") +
+  labs(
+    x = "Day",
+    y = "Number of Transactions",
+    title = "Transactions in December"
+  ) +
+  scale_x_date(date_breaks = "1 day", date_labels = "%d %b") +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 90, vjust = 0.5))
+```
+
+Sales peak before Christmas, with zero transactions on December 25.
+
+# Step 4: Creating Additional Features
+
+## Extracting Pack Size
+
+We extracted pack size from `prod_name` and visualized its distribution.
+
+```{r Extract Pack Size}
+# Extracting numeric pack sizes from prod_name
+transactionData[, pack_size := as.numeric(gsub("[^0-9]", "", prod_name))]
+transactionData[, .N, by = pack_size][order(pack_size)]
+
+# Plot :
+ggplot(transactionData, aes(x = pack_size)) +
+  geom_histogram(binwidth = 10) +
+  labs(x = "Pack Size (g)", y = "Number of Transactions", title = "Transactions by Pack Size")
+```
+
+Pack sizes range from 70g to 380g, with 175g being the most common.
+
+## Extracting Brand Name
+
+We extracted and standardized brand names from `prod_name`.
+
+```{r Extract Brand Name}
+# Extracting the first word as the brand
+transactionData[, BRAND := sub("^(\\w+).*", "\\1", prod_name)]
+
+# Converting BRAND to character if it's a factor
+transactionData[, BRAND := as.character(BRAND)]
+
+# Cleaning up similar brands (e.g., "RED" and "RRD" are "Red Rock Deli")
+transactionData[BRAND %in% c("RED", "Red", "RRD"), BRAND := "RRD"]
+
+# Consolidating similar brand names
+transactionData[BRAND %in% c("Dorito", "Doritos"), BRAND := "Doritos"]
+transactionData[BRAND %in% c("Smith", "Smiths"), BRAND := "Smiths"]
+transactionData[BRAND %in% c("Infzns", "Infuzions"), BRAND := "Infuzions"]
+transactionData[BRAND %in% c("WW", "Woolworths"), BRAND := "Woolworths"]
+transactionData[BRAND %in% c("Snbts", "Sunbites"), BRAND := "Sunbites"]
+
+# Viewing Updated brand counts
+table(transactionData$BRAND)
+```
+
+# Step 5: Examining Customer Data
+
+## Summarizing Customer Data
+
+We explored the distributions of `lifestage` and `premium_customer`.
+
+```{r Summarize Customer Data}
+table(customerData$lifestage)
+table(customerData$premium_customer)
+```
+
+Key lifestages include "Retirees" and "Young Singles/Couples," with "Mainstream" being the largest premium category.
+
+## Merging Datasets
+
+We combined transaction and customer data for segment analysis.
+
+```{r Merge Datasets}
+library(janitor)
+# Combining transactionData and customerData:
+data <- merge(transactionData, customerData, by = "lylty_card_nbr", all.x = TRUE)
+sum(is.na(data$lifestage)) # should be 0
+sum(is.na(data$premium_customer)) # should be 0
+```
+
+No missing customer details, confirming a complete merge.
+
+# Step 6: Data Analysis on Customer Segments
+
+## Total Sales by Segment
+
+We calculated and plotted total sales by lifestage and premium status.
+
+```{r Total Sales by Segment, fig.width=7, fig.align="center"}
+sales_by_segment <- data[, .(Total_Sales = sum(tot_sales)), by = .(lifestage, premium_customer)]
+
+# Plot :
+ggplot(sales_by_segment, aes(x = lifestage, y = Total_Sales, fill = premium_customer)) +
+  geom_bar(stat = "identity", position = "dodge") +
+  labs(x = "Lifestage", y = "Total Sales", title = "Total Sales by Customer Segment") +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+```
+
+Mainstream Young Singles/Couples, Budget Older Families, and Mainstream Retirees drive the highest sales.
+
+## Number of Customers by Segment
+
+We counted unique customers per segment.
+
+```{r Number of Customers by Segment, fig.width=7, fig.align="center"}
+customers_by_segment <- data[, .(Num_Customers = uniqueN(lylty_card_nbr)), by = .(lifestage, premium_customer)]
+
+# Plot : 
+ggplot(customers_by_segment, aes(x = lifestage, y = Num_Customers, fill = premium_customer)) +
+  geom_bar(stat = "identity", position = "dodge") +
+  labs(x = "Lifestage", y = "Number of Customers", title = "Customers by Segment") +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+```
+
+Mainstream Young Singles/Couples and Retirees have the most customers.
+
+## Average Units per Customer
+
+We computed and plotted the average units purchased per customer.
+
+```{r Average Units per Customer, fig.width=7, fig.align="center"}
+units_per_customer <- data[, .(Total_Qty = sum(prod_qty), Num_Customers = uniqueN(lylty_card_nbr)), by = .(lifestage, premium_customer)]
+units_per_customer[, Avg_Units := Total_Qty / Num_Customers]
+
+# Plot :
+ggplot(units_per_customer, aes(x = lifestage, y = Avg_Units, fill = premium_customer)) +
+  geom_bar(stat = "identity", position = "dodge") +
+  labs(x = "Lifestage", y = "Average Units per Customer", title = "Average Units by Segment") +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+```
+
+Older and Young Families buy more units per customer.
+
+## Average Price per Unit
+
+We calculated and plotted the average price per unit.
+
+```{r Average Price per Unit, fig.width=7, fig.align="center"}
+price_per_unit <- data[, .(Total_Sales = sum(tot_sales), Total_Qty = sum(prod_qty)), by = .(lifestage, premium_customer)]
+price_per_unit[, Avg_Price := Total_Sales / Total_Qty]
+
+# Plot :
+ggplot(price_per_unit, aes(x = lifestage, y = Avg_Price, fill = premium_customer)) +
+  geom_bar(stat = "identity", position = "dodge") +
+  labs(x = "Lifestage", y = "Average Price per Unit", title = "Average Price by Segment") +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+```
+
+Mainstream Young and Midage Singles/Couples pay slightly more per unit.
+
+## T-Test for Price Difference
+
+We tested if the price difference for Mainstream vs. others in Young/Midage Singles/Couples is significant.
+
+```{r T-Test for Price Difference}
+mainstream <- data[lifestage %in% c("YOUNG SINGLES/COUPLES", "MIDAGE SINGLES/COUPLES") & premium_customer == "Mainstream", tot_sales / prod_qty]
+others <- data[lifestage %in% c("YOUNG SINGLES/COUPLES", "MIDAGE SINGLES/COUPLES") & premium_customer != "Mainstream", tot_sales / prod_qty]
+t.test(mainstream, others)
+```
+
+The p-value (typically < 0.05, depending on data) indicates a significant difference, suggesting Mainstream customers pay more per unit.
+
+# Step 7: Deep Dive into Mainstream Young Singles/Couples
+
+## Brand Preference
+
+We analyzed brand preferences for this segment.
+
+```{r Brand Preference, fig.align="center"}
+mainstream_ysc <- data[lifestage == "YOUNG SINGLES/COUPLES" & premium_customer == "Mainstream"]
+brand_pref <- mainstream_ysc[, .(Total_Qty = sum(prod_qty)), by = BRAND][order(-Total_Qty)]
+
+# Plot :
+ggplot(brand_pref, aes(x = reorder(BRAND, Total_Qty), y = Total_Qty)) +
+  geom_bar(stat = "identity") +
+  labs(x = "Brand", y = "Total Quantity", title = "Brand Preference for Mainstream Young Singles/Couples") +
+  coord_flip()
+```
+
+Kettle, Doritos, and Pringles are top brands, indicating a preference for premium or popular brands.
+
+## Pack Size Preference
+
+We examined pack size preferences.
+
+```{r Pack Size Preference, fig.width=7, fig.align="center"}
+pack_pref <- mainstream_ysc[, .(Total_Qty = sum(prod_qty)), by = pack_size][order(-Total_Qty)]
+
+# Plot :
+ggplot(pack_pref, aes(x = pack_size, y = Total_Qty)) +
+  geom_bar(stat = "identity") +
+  labs(x = "Pack Size (g)", y = "Total Quantity", title = "Pack Size Preference for Mainstream Young Singles/Couples")
+```
+
+The 175g pack is most popular, suggesting a preference for mid-sized packs suitable for individual or small group consumption.
+
+---
+
+## Conclusion
+
+This analysis reveals that Mainstream Young Singles/Couples are a key segment, contributing significantly to chip sales with a preference for premium brands (Kettle, Doritos) and mid-sized packs (175g). 
+They pay more per unit, as confirmed by the t-test, indicating a willingness to spend on quality or convenience. 
+Budget Older Families and Mainstream Retirees also drive sales, with higher units per customer and larger customer bases, respectively. 
+These insights can guide targeted marketing strategies, such as promoting popular brands and pack sizes to retain and grow these segments.
+
+```{r Exporting Dataset}
+# Saving the dataset for Task 2 
+fwrite(data, paste0(filePath, "QVI_data.csv"))
+```
+
+---
