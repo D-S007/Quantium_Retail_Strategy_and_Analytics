@@ -1,5 +1,5 @@
 # Quantium Retail Strategy and Analytics
-![alt text](docs/Quantium_Retail_Strategy_Dashboard.png)
+![alt text](visualizations/Quantium_Retail_Strategy_Dashboard.png)
 Dashboard (Looker)
 
 ## Project Overview
