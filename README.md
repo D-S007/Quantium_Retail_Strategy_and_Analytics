@@ -1,10 +1,9 @@
 # Quantium Retail Strategy and Analytics
 
-Welcome to my **Data Analytics Project using R**! This repository contains my solution for Task 1 of the Quantium Virtual Internship, where I analyzed retail transaction and customer data to uncover insights into purchasing behaviors using R.
+<iframe width="600" height="338" src="https://lookerstudio.google.com/embed/reporting/be99ac88-e47d-479e-b992-990a59ba7a68/page/iodXF" frameborder="0" style="border:0" allowfullscreen sandbox="allow-storage-access-by-user-activation allow-scripts allow-same-origin allow-popups allow-popups-to-escape-sandbox"></iframe>
 
 ## Project Overview
-
-In this project, I:
+In this project, I analyzed retail transaction and customer data of Quantium to uncover insights into purchasing behaviors of customers:
 - Loaded and cleaned transaction data (`QVI_transaction_data.xlsx`) and customer data (`QVI_purchase_behaviour.csv`).
 - Conducted exploratory data analysis to identify transaction trends and product preferences.
 - Analyzed customer segments to derive actionable insights, with a focus on Mainstream Young Singles/Couples.
