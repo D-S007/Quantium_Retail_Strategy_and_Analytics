@@ -1,8 +1,7 @@
 # Quantium Retail Strategy and Analytics
+![alt text](docs/Quantium_Retail_Strategy_Dashboard.png)
+Dashboard (Looker)
 
-```HTML
-<iframe width="600" height="338" src="https://lookerstudio.google.com/embed/reporting/be99ac88-e47d-479e-b992-990a59ba7a68/page/iodXF" frameborder="0" style="border:0" allowfullscreen sandbox="allow-storage-access-by-user-activation allow-scripts allow-same-origin allow-popups allow-popups-to-escape-sandbox"></iframe>
-```
 ## Project Overview
 In this project, I analyzed retail transaction and customer data of Quantium to uncover insights into purchasing behaviors of customers:
 - Loaded and cleaned transaction data (`QVI_transaction_data.xlsx`) and customer data (`QVI_purchase_behaviour.csv`).
