@@ -71,7 +71,7 @@ These are embedded in the `FinalReport.pdf` and available as standalone PNGs.
 
 ## Blog Post
 
-For a detailed walkthrough, read my [Medium blog post](https://medium.com/@davidsingh.blogs).
+For a detailed walkthrough, read my [Medium blog post](https://medium.com/@davidsingh.blogs/quantium-retail-analytics-uncovering-customer-insights-with-r-fb0166679a47).
 
 
 ## Contact
