@@ -1,6 +1,10 @@
 # 📊 Retail Chip Sales & Customer Analysis in FMCG using R + Looker
 
 ---
+![Looker Dashboard](dashboard/Looker_Dashboard.gif)
+Looker Dashboard
+
+---
 
 ## 🚀 Executive Summary
 
@@ -20,10 +24,7 @@
 * The FMCG industry is **highly competitive** with thin margins, making **customer insights** a critical differentiator.
 * Chips are a **high-volume, high-frequency purchase** product. Retailers need to know **who buys them, what drives volume, and how pricing impacts sales.**
 * This project analyzed **transactional sales and customer demographic data** to derive **actionable segment-level insights**.
-* Supporting assets:
-
-  * [📂 Full Report](https://d-s007.github.io/Quantium_Retail_Strategy_and_Analytics/)
-  * ![Looker Dashboard](dashboard/Looker_Dashboard.gif)
+* Supporting assets: [📂 Full Report](https://d-s007.github.io/Quantium_Retail_Strategy_and_Analytics/)
 ---
 
 ## 📊 Key Visualizations
