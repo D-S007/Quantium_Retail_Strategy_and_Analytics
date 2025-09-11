@@ -1,4 +1,4 @@
-# 📊 Retail Chip Sales & Customer Analysis in FMCG using R + Tableau
+# 📊 Retail Chip Sales & Customer Analysis in FMCG using R + Looker
 
 ---
 
