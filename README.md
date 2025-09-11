@@ -2,7 +2,7 @@
 
 ---
 ![Looker Dashboard](dashboard/Looker_Dashboard.gif)
-Looker Dashboard
+[Looker Dashboard](https://lookerstudio.google.com/reporting/be99ac88-e47d-479e-b992-990a59ba7a68)
 
 ---
 
@@ -142,7 +142,7 @@ Looker Dashboard
 
 * **R:** Data.table, dplyr, ggplot2, janitor, lubridate
 * **SQL:** Joins, aggregations (for data prep, if scaled to DB)
-* **Visualization:** Tableau dashboard for stakeholders
+* **Visualization:** Looker dashboard for stakeholders
 * **Statistics:** T-tests, cohort/segment analysis
 * **Business Translation:** Retail strategy alignment with customer insights
 
